@@ -1,0 +1,55 @@
+# docker compose up --build
+# Ollama runs on the HOST (or elsewhere) - see README. The backend reaches it via OLLAMA_BASE_URL.
+services:
+  backend:
+    build:
+      context: ./backend
+      args:
+        INSTALL_OPTIONAL: ${INSTALL_OPTIONAL:-false}
+    environment:
+      APP_ENV: production
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env (see .env.example)}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/interview.db}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-120}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      EMBEDDINGS_ENABLED: ${EMBEDDINGS_ENABLED:-false}
+      WHISPER_ENABLED: ${WHISPER_ENABLED:-false}
+      WHISPER_MODEL: ${WHISPER_MODEL:-base.en}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # lets the container reach Ollama on the Linux host
+    volumes:
+      - backend-data:/app/data
+      - model-cache:/home/appuser/.cache      # HuggingFace / Whisper models are downloaded once
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Optional PostgreSQL: docker compose --profile postgres up --build
+  # then set DATABASE_URL=postgresql+psycopg2://interview:interview@postgres:5432/interview in .env
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: interview
+      POSTGRES_PASSWORD: interview
+      POSTGRES_DB: interview
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+volumes:
+  backend-data:
+  model-cache:
+  pg-data:

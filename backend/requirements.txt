@@ -1,0 +1,18 @@
+Flask==3.1.3
+flask-cors==6.0.5
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.54
+python-dotenv==1.2.2
+requests==2.33.1
+itsdangerous==2.2.0
+pypdf==5.9.0
+reportlab==4.4.10
+numpy>=1.26
+opencv-python-headless>=4.9
+mediapipe>=0.10.14
+gunicorn==23.0.0
+psycopg2-binary>=2.9   # only needed for PostgreSQL; safe to remove for SQLite-only
+pytest>=8.0
+# Optional heavy components (see README "Optional AI components"):
+#   sentence-transformers   -> semantic embeddings (falls back to lexical similarity)
+#   faster-whisper          -> server-side speech-to-text (falls back to browser speech / text)
